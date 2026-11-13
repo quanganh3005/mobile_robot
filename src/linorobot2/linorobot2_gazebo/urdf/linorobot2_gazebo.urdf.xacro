@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="linorobot2">
+  <!-- Load the original robot description without modifying the base package -->
+  <xacro:include filename="$(find linorobot2_description)/urdf/2wd.urdf.xacro" />
+  
+  <!-- Add the Gazebo simulation plugins -->
+  <xacro:include filename="$(find linorobot2_description)/urdf/controllers/diff_drive.urdf.xacro" />
+  <xacro:diff_drive_controller wheel_separation="0.2008" wheel_radius="0.04" />
+
+  <xacro:include filename="$(find linorobot2_description)/urdf/sensors/plugins.urdf.xacro" />
+
+  <xacro:include filename="$(find linorobot2_description)/urdf/sensors/imu.urdf.xacro" />
+  <xacro:imu_sensor reference="imu_link" />
+
+  <xacro:include filename="$(find linorobot2_description)/urdf/sensors/laser.urdf.xacro" />
+  <xacro:laser_sensor reference="laser" />
+
+  <gazebo reference="front_caster_wheel_link">
+    <mu1>0.001</mu1>
+    <mu2>0.001</mu2>
+    <kp>1000000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+  </gazebo>
+
+  <gazebo reference="left_wheel_link">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.1</maxVel>
+  </gazebo>
+
+  <gazebo reference="right_wheel_link">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.1</maxVel>
+  </gazebo>
+</robot>

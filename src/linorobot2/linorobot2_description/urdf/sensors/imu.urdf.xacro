@@ -1,0 +1,22 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="imu_sensor" params="reference:=imu_link topic_name:=imu/data update_rate:=50">
+    <gazebo>
+      <plugin filename="ignition-gazebo-imu-system" name="ignition::gazebo::systems::Imu">
+      </plugin>
+    </gazebo>
+
+    <gazebo reference="${reference}">
+      <sensor name="imu_sensor" type="imu">
+        <topic>${topic_name}</topic>
+        <ignition_frame_id>${reference}</ignition_frame_id>
+        <update_rate>${update_rate}</update_rate>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="imu" params="reference:=imu_link topic_name:=imu/data update_rate:=50">
+    <xacro:imu_sensor reference="${reference}" topic_name="${topic_name}" update_rate="${update_rate}" />
+  </xacro:macro>
+</robot>
