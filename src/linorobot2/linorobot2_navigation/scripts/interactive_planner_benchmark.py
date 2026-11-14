@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# Script đo đạc và so sánh hiệu năng các thuật toán lập kế hoạch đường đi (Nav2)
+# Hỗ trợ: Navfn (Dijkstra, A*), SmacPlanner2D, ThetaStar
+# ==============================================================================
+
 import csv
 import math
 import os
@@ -199,6 +205,12 @@ class InteractiveSinglePlannerBenchmark(Node):
             cx = msg.pose.pose.position.x
             cy = msg.pose.pose.position.y
 
+            # Khởi tạo điểm bắt đầu odom nếu chưa có mốc
+            if run['last_odom_x'] is None or run['last_odom_y'] is None:
+                run['last_odom_x'] = cx
+                run['last_odom_y'] = cy
+                return
+
             # Chỉ cộng khi dịch chuyển đủ lớn để nhiễu không bị cộng dồn
             step = math.hypot(cx - run['last_odom_x'], cy - run['last_odom_y'])
             if step >= ODOM_MIN_STEP:
@@ -275,8 +287,13 @@ class InteractiveSinglePlannerBenchmark(Node):
             else:
                 avg_cost = max_cost = float('nan')
 
-            odom_x = self.latest_odom.pose.pose.position.x if self.latest_odom else rx
-            odom_y = self.latest_odom.pose.pose.position.y if self.latest_odom else ry
+            # Khởi tạo mốc odom ban đầu một cách an toàn
+            if self.latest_odom is not None:
+                odom_x = self.latest_odom.pose.pose.position.x
+                odom_y = self.latest_odom.pose.pose.position.y
+            else:
+                odom_x = None
+                odom_y = None
 
             stale = {gid for gid, st in self.last_status
                      if st in (STATUS_SUCCEEDED, STATUS_CANCELED, STATUS_ABORTED)}
@@ -310,53 +327,54 @@ class InteractiveSinglePlannerBenchmark(Node):
 
     # ------------------------------------------------------------------ kết thúc lần chạy
     def finish_tracking_run(self, success=True):
-        if not self.is_tracking or not self.current_run:
-            return
-        run = self.current_run
-        planner = self.resolve_label()
-        drive_duration = self.now_s() - run['start_time']
-        planned_len = run['planned_length']
-        avg_cost, max_cost = run['avg_cost'], run['max_cost']
-        actual_dist = run['actual_distance']
-        status_str = 'THÀNH CÔNG' if success else 'DỪNG/HỦY'
+        with self.lock:
+            if not self.is_tracking or not self.current_run:
+                return
+            run = self.current_run
+            planner = self.resolve_label()
+            drive_duration = self.now_s() - run['start_time']
+            planned_len = run['planned_length']
+            avg_cost, max_cost = run['avg_cost'], run['max_cost']
+            actual_dist = run['actual_distance']
+            status_str = 'THÀNH CÔNG' if success else 'DỪNG/HỦY'
 
-        print('\n' + '=' * 80)
-        print(f'🎯 [HOÀN THÀNH LẦN CHẠY CỦA: {planner} - {status_str}]')
-        print('=' * 80)
-        print(f'  1. Thuật toán đánh giá                      : {planner}')
-        print(f'  2. Độ dài đường đi hoạch định (Path Length) : {planned_len:6.3f} m')
-        print(f'  3. Cost trung bình (Average Cost, 0-100)    : {cell(avg_cost, 2):>6}')
-        print(f'  4. Cost lớn nhất (Max Cost, 0-100)          : {cell(max_cost, 1):>6}')
-        print(f'  5. Thời gian xe chạy (giờ mô phỏng)         : {drive_duration:6.2f} s')
-        print(f'  6. Quãng đường thực tế lăn bánh (Odom Dist) : {actual_dist:6.3f} m')
-        print('=' * 80)
+            print('\n' + '=' * 80)
+            print(f'🎯 [HOÀN THÀNH LẦN CHẠY CỦA: {planner} - {status_str}]')
+            print('=' * 80)
+            print(f'  1. Thuật toán đánh giá                      : {planner}')
+            print(f'  2. Độ dài đường đi hoạch định (Path Length) : {planned_len:6.3f} m')
+            print(f'  3. Cost trung bình (Average Cost, 0-100)    : {cell(avg_cost, 2):>6}')
+            print(f'  4. Cost lớn nhất (Max Cost, 0-100)          : {cell(max_cost, 1):>6}')
+            print(f'  5. Thời gian xe chạy (giờ mô phỏng)         : {drive_duration:6.2f} s')
+            print(f'  6. Quãng đường thực tế lăn bánh (Odom Dist) : {actual_dist:6.3f} m')
+            print('=' * 80)
 
-        record = {
-            'timestamp': time.strftime('%H:%M:%S'),
-            'planner': planner,
-            'start_x': round(run['start_x'], 2), 'start_y': round(run['start_y'], 2),
-            'goal_x': round(run['goal_x'], 2), 'goal_y': round(run['goal_y'], 2),
-            'planned_length_m': round(planned_len, 3),
-            'avg_cost': num_or_none(avg_cost, 2),
-            'max_cost': num_or_none(max_cost, 1),
-            'actual_time_s': round(drive_duration, 2),
-            'actual_odom_m': round(actual_dist, 3),
-        }
-        self.history_records.append(record)
-        self.save_record_to_csv(record)
-        self.print_comparison_summary()
+            record = {
+                'timestamp': time.strftime('%H:%M:%S'),
+                'planner': planner,
+                'start_x': round(run['start_x'], 2), 'start_y': round(run['start_y'], 2),
+                'goal_x': round(run['goal_x'], 2), 'goal_y': round(run['goal_y'], 2),
+                'planned_length_m': round(planned_len, 3),
+                'avg_cost': num_or_none(avg_cost, 2),
+                'max_cost': num_or_none(max_cost, 1),
+                'actual_time_s': round(drive_duration, 2),
+                'actual_odom_m': round(actual_dist, 3),
+            }
+            self.history_records.append(record)
+            self.save_record_to_csv(record)
+            self.print_comparison_summary()
 
-        self.last_goal = (run['goal_x'], run['goal_y'])
-        self.cooldown_until = self.now_s() + COOLDOWN_S
-        self.is_tracking = False
-        self.current_run = None
+            self.last_goal = (run['goal_x'], run['goal_y'])
+            self.cooldown_until = self.now_s() + COOLDOWN_S
+            self.is_tracking = False
+            self.current_run = None
 
-        print('\n' + '-' * 80)
-        print(f'👉 Hiện tại đang gắn nhãn thuật toán: [{self.active_planner}].')
-        print('   • Chạy tiếp với thuật toán này: sang RViz và chấm Goal tiếp theo.')
-        print('   • Nếu đã đổi thuật toán trong config: gõ [1/2/3/4] rồi bấm Enter:')
-        print('       [1] NavfnDijkstra | [2] NavfnAStar | [3] Smac2D | [4] ThetaStar')
-        print('-' * 80 + '\n')
+            print('\n' + '-' * 80)
+            print(f'👉 Hiện tại đang gắn nhãn thuật toán: [{self.active_planner}].')
+            print('   • Chạy tiếp với thuật toán này: sang RViz và chấm Goal tiếp theo.')
+            print('   • Nếu đã đổi thuật toán trong config: gõ [1/2/3/4] rồi bấm Enter:')
+            print('       [1] NavfnDijkstra | [2] NavfnAStar | [3] Smac2D | [4] ThetaStar')
+            print('-' * 80 + '\n')
 
     # ------------------------------------------------------------------ CSV
     def save_record_to_csv(self, record):
@@ -382,7 +400,7 @@ class InteractiveSinglePlannerBenchmark(Node):
         if os.path.exists(self.csv_file_path):
             try:
                 with open(self.csv_file_path, mode='r', encoding='utf-8') as f:
-                    self.history_records = list(csv.DictReader(f))
+                    self.history_records = [r for r in csv.DictReader(f) if r.get('planner')]
             except Exception:
                 pass
 
@@ -401,15 +419,17 @@ class InteractiveSinglePlannerBenchmark(Node):
         print(head)
         print(line)
         for idx, r in enumerate(self.history_records):
+            p_name = r.get('planner', 'Unknown')
             v = [to_float(r.get(k)) for k in
                  ('planned_length_m', 'avg_cost', 'max_cost', 'actual_time_s', 'actual_odom_m')]
-            print(f"| {idx + 1:<4} | {r['planner']:<14} | {cell(v[0], 3):^13} | {cell(v[1], 2):^10} | "
+            print(f"| {idx + 1:<4} | {p_name:<14} | {cell(v[0], 3):^13} | {cell(v[1], 2):^10} | "
                   f"{cell(v[2], 1):^9} | {cell(v[3], 2):^13} | {cell(v[4], 3):^10} |")
         print('#' * 88)
 
         groups = {}
         for r in self.history_records:
-            groups.setdefault(r['planner'], []).append(r)
+            p_name = r.get('planner', 'Unknown')
+            groups.setdefault(p_name, []).append(r)
         print(f"\n{'TRUNG BÌNH THEO THUẬT TOÁN':^88}")
         print(head.replace('Lần', 'Số '))
         print(line)

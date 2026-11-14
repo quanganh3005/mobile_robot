@@ -5,7 +5,7 @@
   
   <!-- Add the Gazebo simulation plugins -->
   <xacro:include filename="$(find linorobot2_description)/urdf/controllers/diff_drive.urdf.xacro" />
-  <xacro:diff_drive_controller wheel_separation="0.2008" wheel_radius="0.04" />
+  <xacro:diff_drive_controller wheel_separation="0.2008" wheel_radius="0.042" />
 
   <xacro:include filename="$(find linorobot2_description)/urdf/sensors/plugins.urdf.xacro" />
 

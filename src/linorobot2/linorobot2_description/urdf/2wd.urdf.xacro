@@ -1,26 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  Linorobot2 2WD Robot Model
+  Tối ưu hóa từ bản xuất CAD SolidWorks cho ROS 2 & Gazebo Sim
+-->
+<robot name="linorobot2">
 
-<robot
-  name="linorobot2">
+  <!-- ==================== BASE FOOTPRINT ==================== -->
+  <!-- Frame hình học tiếp xúc mặt đất (z=0), không gán mass/collision để tránh xung đột vật lý -->
+  <link name="base_footprint" />
 
-  <link
-    name="base_footprint">
-  </link>
-  <link
-    name="base_link">
+  <!-- ==================== BASE LINK ==================== -->
+  <link name="base_link">
     <inertial>
       <origin
-        xyz="0.0 0.0 0.02"
+        xyz="-0.000502633588635925 0.000120091483071056 0.0194533561969236"
         rpy="0 0 0" />
       <mass
-        value="2.5" />
+        value="1.5" />
       <inertia
-        ixx="0.0115"
-        ixy="0.0"
-        ixz="0.0"
-        iyy="0.0148"
-        iyz="0.0"
-        izz="0.0227" />
+        ixx="0.0112019011536081"
+        ixy="-3.09771956122014E-07"
+        ixz="0.000630787752365372"
+        iyy="0.0135628123233002"
+        iyz="-1.71104330528261E-05"
+        izz="0.0156062766353694" />
     </inertial>
     <visual>
       <origin
@@ -31,7 +34,7 @@
           filename="package://linorobot2_description/meshes/base_link.STL" />
       </geometry>
       <material
-        name="">
+        name="base_link_material">
         <color
           rgba="0.949019607843137 0.76078431372549 0.180392156862745 1" />
       </material>
@@ -46,21 +49,20 @@
       </geometry>
     </collision>
   </link>
-  <joint
-    name="base_to_footprint"
-    type="fixed">
+
+  <joint name="base_to_footprint" type="fixed">
     <origin
-      xyz="0 0 0.0647499999999999"
+      xyz="0 0 0.06675"
       rpy="0 0 0" />
     <parent
       link="base_footprint" />
     <child
       link="base_link" />
-    <axis
-      xyz="0 0 0" />
   </joint>
-  <link
-    name="front_caster_wheel_link">
+
+  <!-- ==================== FRONT CASTER WHEEL ==================== -->
+  <!-- Dùng collision hình cầu (sphere) và mass thực tế để lăn/trượt trơn tru trong Gazebo -->
+  <link name="front_caster_wheel_link">
     <inertial>
       <origin
         xyz="0 0 0.015"
@@ -84,7 +86,7 @@
           filename="package://linorobot2_description/meshes/front_caster_wheel_link.STL" />
       </geometry>
       <material
-        name="">
+        name="caster_material">
         <color
           rgba="0.898039215686275 0.898039215686275 0.898039215686275 1" />
       </material>
@@ -99,21 +101,19 @@
       </geometry>
     </collision>
   </link>
-  <joint
-    name="front_caster_wheel_joint"
-    type="fixed">
+
+  <joint name="front_caster_wheel_joint" type="fixed">
     <origin
-      xyz="0.11 0 -0.0647499999999999"
+      xyz="0.11 0 -0.06675"
       rpy="0 0 0" />
     <parent
       link="base_link" />
     <child
       link="front_caster_wheel_link" />
-    <axis
-      xyz="0 0 0" />
   </joint>
-  <link
-    name="imu_link">
+
+  <!-- ==================== IMU SENSOR ==================== -->
+  <link name="imu_link">
     <inertial>
       <origin
         xyz="0 0 0"
@@ -137,7 +137,7 @@
           filename="package://linorobot2_description/meshes/imu_link.STL" />
       </geometry>
       <material
-        name="">
+        name="imu_material">
         <color
           rgba="0.917647058823529 0.917647058823529 0.917647058823529 1" />
       </material>
@@ -152,21 +152,19 @@
       </geometry>
     </collision>
   </link>
-  <joint
-    name="imu_to_base_link"
-    type="fixed">
+
+  <joint name="imu_to_base_link" type="fixed">
     <origin
-      xyz="0.0877044320833447 0 0.0166"
+      xyz="0.087704 0 0.0166"
       rpy="0 0 0" />
     <parent
       link="base_link" />
     <child
       link="imu_link" />
-    <axis
-      xyz="0 0 0" />
   </joint>
-  <link
-    name="laser">
+
+  <!-- ==================== LIDAR SENSOR ==================== -->
+  <link name="laser">
     <inertial>
       <origin
         xyz="0 0 0.03"
@@ -190,7 +188,7 @@
           filename="package://linorobot2_description/meshes/laser.STL" />
       </geometry>
       <material
-        name="">
+        name="laser_material">
         <color
           rgba="0.211764705882353 0.211764705882353 0.203921568627451 1" />
       </material>
@@ -205,9 +203,8 @@
       </geometry>
     </collision>
   </link>
-  <joint
-    name="laser_to_base_link"
-    type="fixed">
+
+  <joint name="laser_to_base_link" type="fixed">
     <origin
       xyz="-0.007544578969814 3.58095410614658E-05 0.12"
       rpy="0 0 0" />
@@ -215,11 +212,11 @@
       link="base_link" />
     <child
       link="laser" />
-    <axis
-      xyz="0 0 0" />
   </joint>
-  <link
-    name="right_wheel_link">
+
+  <!-- ==================== RIGHT WHEEL ==================== -->
+  <!-- Dùng collision hình trụ (cylinder) để bánh xe lăn tròn đều, không bị rung giật như dạng lưới mesh -->
+  <link name="right_wheel_link">
     <inertial>
       <origin
         xyz="0 -0.015 0"
@@ -227,12 +224,12 @@
       <mass
         value="0.12" />
       <inertia
-        ixx="0.000057"
+        ixx="0.000063"
         ixy="0.0"
         ixz="0.0"
-        iyy="0.000096"
+        iyy="0.000106"
         iyz="0.0"
-        izz="0.000057" />
+        izz="0.000063" />
     </inertial>
     <visual>
       <origin
@@ -243,7 +240,7 @@
           filename="package://linorobot2_description/meshes/right_wheel_link.STL" />
       </geometry>
       <material
-        name="">
+        name="right_wheel_material">
         <color
           rgba="0.831372549019608 0.670588235294118 0.129411764705882 1" />
       </material>
@@ -254,14 +251,13 @@
         rpy="1.57079632679 0 0" />
       <geometry>
         <cylinder
-          radius="0.04"
+          radius="0.042"
           length="0.03" />
       </geometry>
     </collision>
   </link>
-  <joint
-    name="right_wheel_joint"
-    type="continuous">
+
+  <joint name="right_wheel_joint" type="continuous">
     <origin
       xyz="-0.077 -0.1004 -0.02475"
       rpy="0 0 0" />
@@ -272,8 +268,9 @@
     <axis
       xyz="0 1 0" />
   </joint>
-  <link
-    name="left_wheel_link">
+
+  <!-- ==================== LEFT WHEEL ==================== -->
+  <link name="left_wheel_link">
     <inertial>
       <origin
         xyz="0 0.015 0"
@@ -281,12 +278,12 @@
       <mass
         value="0.12" />
       <inertia
-        ixx="0.000057"
+        ixx="0.000063"
         ixy="0.0"
         ixz="0.0"
-        iyy="0.000096"
+        iyy="0.000106"
         iyz="0.0"
-        izz="0.000057" />
+        izz="0.000063" />
     </inertial>
     <visual>
       <origin
@@ -297,7 +294,7 @@
           filename="package://linorobot2_description/meshes/left_wheel_link.STL" />
       </geometry>
       <material
-        name="">
+        name="left_wheel_material">
         <color
           rgba="0.831372549019608 0.670588235294118 0.129411764705882 1" />
       </material>
@@ -308,14 +305,13 @@
         rpy="1.57079632679 0 0" />
       <geometry>
         <cylinder
-          radius="0.04"
+          radius="0.042"
           length="0.03" />
       </geometry>
     </collision>
   </link>
-  <joint
-    name="left_wheel_joint"
-    type="continuous">
+
+  <joint name="left_wheel_joint" type="continuous">
     <origin
       xyz="-0.077 0.1004 -0.02475"
       rpy="0 0 0" />
@@ -326,4 +322,5 @@
     <axis
       xyz="0 1 0" />
   </joint>
+
 </robot>
